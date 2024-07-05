@@ -1,0 +1,9 @@
+.theos
+.DS_Store
+packages/
+tmp/
+Tweaks/uYou/*
+!Tweaks/uYou/.gitkeep
+Resources/
+*.ipa
+.vscode

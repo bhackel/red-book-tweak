@@ -36,11 +36,6 @@ on:
         default: true
         required: false
         type: boolean
-      create_release:
-        description: "Create a draft release"
-        default: true
-        required: false
-        type: boolean
   
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -116,7 +111,7 @@ jobs:
           wget "$YOUTUBE_URL" --no-verbose -O main/YouTube.ipa
           cd ${{ github.workspace }}/main
           mv YouTube.ipa YouTube.zip
-          unzip -q YouTube.zip
+          unzip YouTube.zip
 
         env:
           THEOS: ${{ github.workspace }}/theos
@@ -126,7 +121,7 @@ jobs:
         id: build_package
         run: |
           cd ${{ github.workspace }}/main
-          make package THEOS_PACKAGE_SCHEME=rootless IPA=Payload/YouTube.app FINALPACKAGE=1
+          make package THEOS_PACKAGE_SCHEME=rootless IPA=Payload/discover.app FINALPACKAGE=1
           echo "package=$(ls -t packages | head -n1)" >>$GITHUB_OUTPUT
           echo -e "==> \033[1mSHASUM256: $(shasum -a 256 packages/*.ipa | cut -f1 -d' ')\033[0m"
           echo -e "==> \033[1mBundle ID: ${{ env.BUNDLE_ID }}\033[0m"

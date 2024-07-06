@@ -8,14 +8,15 @@
 #import <substrate.h>
 #import <rootless.h>
 
-@interface XYMHomeViewController : UIViewController
-- (void)homeNaviBar:(id)naviBar didSelectSegmentAtIndex:(NSInteger)index;
+@interface XYMHomeNaviBar : UIView
 @end
 
-@interface XYMHomeNaviBar : UIView
-@property (nonatomic, strong) XYMHomeViewController *delegate;
+@interface XYMHomeViewController : UIViewController
+@property (nonatomic, strong) XYMHomeNaviBar *naviBarView;
+- (void)homeNaviBar:(id)naviBar willSelectSegmentAtIndex:(NSInteger)index;
 @end
 
 @interface XYSegmentControl : UIControl
 @property (nonatomic, strong) XYMHomeNaviBar *delegate;
+@property (nonatomic, strong) NSArray<UIButton *> *buttons;
 @end

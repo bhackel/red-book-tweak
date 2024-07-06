@@ -1,32 +1,34 @@
-#import "uYouPlus.h"
+#import "Tweak.h"
 
 
 %group main
-%hook XYSegmentControl
+%hook XYMHomeViewController
 - (void)xy_viewDidLoad {
     %orig;
+    NSLog(@"bhackel: XYMHomeViewController xy_viewDidLoad");
     // Switch to the Follow page (index 0) when the page is loaded
-    XYMHomeNaviBar *homeNaviBar = self.delegate;
-    XYMHomeViewController *homeVC = homeNaviBar.delegate;
-    [homeVC homeNaviBar:homeNaviBar didSelectSegmentAtIndex:0];
+    XYMHomeNaviBar *homeNaviBar = self.naviBarView;
+    [self homeNaviBar:homeNaviBar willSelectSegmentAtIndex:0];
 }
 %end
+
+%hook XYSegmentControl
 - (void)layoutSubviews {
     %orig;
-    // Hide the Explore button
-    UIScrollView *scrollView = (UIScrollView *)self.subviews.firstObject;
+    NSLog(@"bhackel: XYSegmentControl layoutSubviews");
+    NSArray<UIButton *> *buttons = self.buttons;
     // Check if we already removed it
-    if (scrollView.subviews.count < 7) {
+    if (buttons.count < 3) {
         return;
     }
-    // Remove it
-    UIButton *exploreButton = scrollView.subviews[4];
+    // Remove the explore button
+    UIButton *exploreButton = buttons[1];
     exploreButton.hidden = YES;
     exploreButton.userInteractionEnabled = NO;
     [exploreButton removeFromSuperview];
 }
-
-end
+%end
+%end
 
 
 # pragma mark - ctor

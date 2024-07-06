@@ -8,27 +8,12 @@ on:
     inputs:
       sdk_version:
         description: "iOS SDK Version"
-        default: "16.4"
-        required: true
-        type: string
-      uyou_version:
-        description: "uYou Version"
-        default: "3.0.3"
+        default: "16.5"
         required: true
         type: string
       decrypted_youtube_url:
-        description: "Direct URL of the decrypted YouTube IPA"
+        description: "Direct URL of the decrypted IPA"
         default: ""
-        required: true
-        type: string
-      bundle_id:
-        description: "Modify the bundle ID"
-        default: "com.google.ios.youtube"
-        required: true
-        type: string
-      app_name:
-        description: "Modify the app name"
-        default: "YouTube"
         required: true
         type: string
       commit_id:
@@ -53,7 +38,7 @@ concurrency:
 
 jobs:
   build:
-    name: Build uYouEnhanced
+    name: Build App
     runs-on: macos-12
     permissions:
       contents: write
@@ -93,7 +78,7 @@ jobs:
       - name: Download iOS SDK
         if: steps.SDK.outputs.cache-hit != 'true'
         run: |
-          git clone --quiet -n --depth=1 --filter=tree:0 https://github.com/arichornlover/sdks/
+          git clone --quiet -n --depth=1 --filter=tree:0 https://github.com/theos/sdks/
           cd sdks
           git sparse-checkout set --no-cone iPhoneOS${{ inputs.sdk_version }}.sdk
           git checkout
@@ -117,15 +102,51 @@ jobs:
 
       - name: Prepare YouTube iPA
         id: prepare_youtube
-        run: |
-          wget "$YOUTUBE_URL" --no-verbose -O main/YouTube.ipa
-          cd ${{ github.workspace }}/main
-          mv YouTube.ipa YouTube.zip
-          unzip -q YouTube.zip
-          youtube_version=$(defaults read "$(pwd)/Payload/YouTube.app/Info" CFBundleVersion)
-          echo "==> YouTube v$youtube_version downloaded!"
-          sed -i '' "17s#.*#YOUTUBE_VERSION = ${youtube_version}#g" Makefile
-          echo "youtube_version=${youtube_version}" >> $GITHUB_OUTPUT
+name: Download and Unzip IPA File
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set environment variables
+      run: |
+        echo "THEOS=/Users/runner/work/red-book-tweak/red-book-tweak/theos" >> $GITHUB_ENV
+        echo "YOUTUBE_URL=https://www.dropbox.com/scl/fi/e4oyb7060709bw0ypbizs/com.xingin.discover-8.43.1.ipa?rlkey=7ez9a34qotw9e56w19wn043tv&st=m3n71d93&dl=0" >> $GITHUB_ENV
+
+    - name: Download and Unzip IPA File
+      run: |
+        #!/bin/bash -e
+
+        # Download the file using curl
+        curl -L "$YOUTUBE_URL" --no-verbose -o main/YouTube.ipa
+        if [ $? -ne 0 ]; then
+            echo "Error downloading file."
+            exit 1
+        fi
+
+        # Check the file type
+        file_type=$(file --mime-type -b main/YouTube.ipa)
+        if [ "$file_type" != "application/zip" ]; then
+            echo "Downloaded file is not a zip file."
+            exit 1
+        fi
+
+        # Proceed if the file is a zip file
+        cd /Users/runner/work/red-book-tweak/red-book-tweak/main
+        mv YouTube.ipa YouTube.zip
+        unzip -q YouTube.zip
+        if [ $? -ne 0 ]; then
+            echo "Error unzipping file."
+            exit 1
+        fi
+
+        echo "File downloaded and unzipped successfully."
 
         env:
           THEOS: ${{ github.workspace }}/theos
@@ -135,9 +156,6 @@ jobs:
         id: build_package
         run: |
           cd ${{ github.workspace }}/main
-          sed -i '' "27s#.*#BUNDLE_ID = ${{ env.BUNDLE_ID }}#g" Makefile                          # Modify the bundle ID
-          sed -i '' "26s#.*#DISPLAY_NAME = ${{ env.APP_NAME }}#g" Makefile                        # Modify the app name
-          sed -i '' "1s#.*#export TARGET = iphone:clang:${{ inputs.sdk_version }}:14.0#g" Makefile # Modify the SDK version
           make package THEOS_PACKAGE_SCHEME=rootless IPA=Payload/YouTube.app FINALPACKAGE=1
           echo "package=$(ls -t packages | head -n1)" >>$GITHUB_OUTPUT
           echo -e "==> \033[1mSHASUM256: $(shasum -a 256 packages/*.ipa | cut -f1 -d' ')\033[0m"
@@ -145,31 +163,11 @@ jobs:
 
         env:
           THEOS: ${{ github.workspace }}/theos
-          UYOU_VERSION: ${{ inputs.uyou_version }}
-          BUNDLE_ID: ${{ inputs.bundle_id }}
-          APP_NAME: ${{ inputs.app_name }}
 
       - name: Upload Artifact
         if: ${{ inputs.upload_artifact }}
         uses: actions/upload-artifact@v4.3.3
-        env:
-          UYOU_VERSION: ${{ inputs.uyou_version }}
-          YOUTUBE_VERSION: ${{ steps.prepare_youtube.outputs.youtube_version }}
         with:
-          name: uYouEnhanced_${{ env.YOUTUBE_VERSION }}_${{ env.UYOU_VERSION }}
+          name: app
           path: ${{ github.workspace }}/main/packages/${{ steps.build_package.outputs.package }}
           if-no-files-found: error
-
-      - name: Create Release
-        if: ${{ inputs.create_release }}
-        id: create_release
-        uses: softprops/action-gh-release@v2.0.5
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          UYOU_VERSION: ${{ inputs.uyou_version }}
-          YOUTUBE_VERSION: ${{ steps.prepare_youtube.outputs.youtube_version }}
-        with:
-          tag_name: v${{ env.YOUTUBE_VERSION }}-${{ env.UYOU_VERSION }}-(${{ github.run_number }})
-          name: v${{ env.YOUTUBE_VERSION }}-${{ env.UYOU_VERSION }}-(${{ github.run_number }})
-          files: main/packages/*.ipa
-          draft: true

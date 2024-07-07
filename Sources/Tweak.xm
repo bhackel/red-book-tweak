@@ -13,23 +13,6 @@
     XYMHomeNaviBar *homeNaviBar = self.naviBarView;
     [self homeNaviBar:homeNaviBar willSelectSegmentAtIndex:0];
 }
-// // do the same thing for viewWillAppear
-// - (void)viewWillAppear:(BOOL)animated {
-//     %orig;
-//     NSLog(@"bhackel: XYMHomeViewController viewWillAppear");
-//     // Switch to the Follow page (index 0) when the page is loaded
-//     XYMHomeNaviBar *homeNaviBar = self.naviBarView;
-//     [self homeNaviBar:homeNaviBar willSelectSegmentAtIndex:0];
-// }
-// // lazyViewDidLoad
-// - (void)lazyViewDidLoad {
-//     %orig;
-//     NSLog(@"bhackel: XYMHomeViewController lazyViewDidLoad");
-//     // Switch to the Follow page (index 0) when the page is loaded
-//     XYMHomeNaviBar *homeNaviBar = self.naviBarView;
-//     [self homeNaviBar:homeNaviBar willSelectSegmentAtIndex:0];
-// }
-
 %end
 
 # pragma mark - Remove Explore button

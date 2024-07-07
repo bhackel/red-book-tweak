@@ -11,19 +11,9 @@ on:
         default: "16.5"
         required: true
         type: string
-      decrypted_youtube_url:
-        description: "Direct URL of the decrypted IPA"
+      decrypted_app_url:
+        description: "Direct URL of the decrypted iPA"
         default: ""
-        required: true
-        type: string
-      bundle_id:
-        description: "Modify the bundle ID"
-        default: "com.google.ios.youtube"
-        required: true
-        type: string
-      app_name:
-        description: "Modify the app name"
-        default: "YouTube"
         required: true
         type: string
       commit_id:
@@ -32,7 +22,7 @@ on:
         required: false
         type: string
       upload_artifact:
-        description: "Upload IPA as artifact"
+        description: "Upload iPA as artifact"
         default: true
         required: false
         type: boolean
@@ -59,7 +49,7 @@ jobs:
       - name: Install Dependencies
         run: brew install ldid dpkg make
 
-      - name: Set PATH environment variable
+      - name: Set PATH environment variable to fix building
         run: echo "$(brew --prefix make)/libexec/gnubin" >> $GITHUB_PATH 
 
       - name: Setup Theos
@@ -82,14 +72,14 @@ jobs:
 
       - name: Download iOS SDK
         if: steps.SDK.outputs.cache-hit != 'true'
+        env:
+          THEOS: ${{ github.workspace }}/theos
         run: |
           git clone --quiet -n --depth=1 --filter=tree:0 https://github.com/theos/sdks/
           cd sdks
           git sparse-checkout set --no-cone iPhoneOS${{ inputs.sdk_version }}.sdk
           git checkout
           mv *.sdk $THEOS/sdks
-        env:
-          THEOS: ${{ github.workspace }}/theos
 
       - name: Setup Theos Jailed
         uses: actions/checkout@v4.1.7
@@ -100,42 +90,36 @@ jobs:
           submodules: recursive
 
       - name: Install Theos Jailed
-        run: |
-          ./theos-jailed/install
         env:
           THEOS: ${{ github.workspace }}/theos
-
-      - name: Prepare YouTube iPA
-        id: prepare_youtube
         run: |
-          wget "$YOUTUBE_URL" --no-verbose -O main/YouTube.ipa
+          ./theos-jailed/install
+
+
+      - name: Prepare iPA
+        id: prepare_ipa
+        env:
+          THEOS: ${{ github.workspace }}/theos
+          APP_URL: ${{ inputs.decrypted_app_url }}
+        run: |
+          wget "$APP_URL" --no-verbose -O main/YouTube.ipa
           cd ${{ github.workspace }}/main
           mv YouTube.ipa YouTube.zip
           unzip YouTube.zip
 
+      - name: Build Package
+        id: build_package
         env:
           THEOS: ${{ github.workspace }}/theos
-          YOUTUBE_URL: ${{ inputs.decrypted_youtube_url }}
-
-      - name: Fix compiling & Build Package
-        id: build_package
         run: |
           cd ${{ github.workspace }}/main
           make package THEOS_PACKAGE_SCHEME=rootless IPA=Payload/discover.app FINALPACKAGE=1
           echo "package=$(ls -t packages | head -n1)" >>$GITHUB_OUTPUT
           echo -e "==> \033[1mSHASUM256: $(shasum -a 256 packages/*.ipa | cut -f1 -d' ')\033[0m"
-          echo -e "==> \033[1mBundle ID: ${{ env.BUNDLE_ID }}\033[0m"
-
-        env:
-          THEOS: ${{ github.workspace }}/theos
-          BUNDLE_ID: ${{ inputs.bundle_id }}
-          APP_NAME: ${{ inputs.app_name }}
 
       - name: Upload Artifact
         if: ${{ inputs.upload_artifact }}
         uses: actions/upload-artifact@v4.3.3
-        env:
-          YOUTUBE_VERSION: ${{ steps.prepare_youtube.outputs.youtube_version }}
         with:
           name: app
           path: ${{ github.workspace }}/main/packages/${{ steps.build_package.outputs.package }}

@@ -2,6 +2,8 @@
 
 
 %group main
+
+# pragma mark - Change default page to the Follow page
 %hook XYMHomeViewController
 - (void)xy_viewDidLoad {
     %orig;
@@ -53,6 +55,7 @@
 
 %end
 
+# pragma mark - Remove Explore button
 %hook XYSegmentControl
 - (void)layoutSubviews {
     %orig;
@@ -69,6 +72,18 @@
     [exploreButton removeFromSuperview];
 }
 %end
+
+# pragma mark - Remove swipe between pages
+%hook XYPageScrollView
+- (void)layoutSubviews {
+    %orig;
+    // Delete the pan gesture to swipe between pages
+    if ([self valueForKey:@"_pan"]) {
+        [self removeGestureRecognizer:[self valueForKey:@"_pan"]];
+    }
+}
+%end
+
 %end
 
 

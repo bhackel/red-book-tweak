@@ -20,3 +20,6 @@
 @property (nonatomic, strong) XYMHomeNaviBar *delegate;
 @property (nonatomic, strong) NSArray<UIButton *> *buttons;
 @end
+
+@interface XYPageScrollView : UIScrollView
+@end

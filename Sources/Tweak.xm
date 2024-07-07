@@ -5,13 +5,6 @@
 
 # pragma mark - Change default page to the Follow page
 %hook XYMHomeViewController
-- (void)xy_viewDidLoad {
-    %orig;
-    NSLog(@"bhackel: XYMHomeViewController xy_viewDidLoad");
-    // Switch to the Follow page (index 0) when the page is loaded
-    XYMHomeNaviBar *homeNaviBar = self.naviBarView;
-    [self homeNaviBar:homeNaviBar willSelectSegmentAtIndex:0];
-}
 // do the same thing for viewDidLoad
 - (void)viewDidLoad {
     %orig;
@@ -20,38 +13,22 @@
     XYMHomeNaviBar *homeNaviBar = self.naviBarView;
     [self homeNaviBar:homeNaviBar willSelectSegmentAtIndex:0];
 }
-// do the same thing for viewWillAppear
-- (void)viewWillAppear:(BOOL)animated {
-    %orig;
-    NSLog(@"bhackel: XYMHomeViewController viewWillAppear");
-    // Switch to the Follow page (index 0) when the page is loaded
-    XYMHomeNaviBar *homeNaviBar = self.naviBarView;
-    [self homeNaviBar:homeNaviBar willSelectSegmentAtIndex:0];
-}
-// do the same thing for viewDidAppear
-- (void)viewDidAppear:(BOOL)animated {
-    %orig;
-    NSLog(@"bhackel: XYMHomeViewController viewDidAppear");
-    // Switch to the Follow page (index 0) when the page is loaded
-    XYMHomeNaviBar *homeNaviBar = self.naviBarView;
-    [self homeNaviBar:homeNaviBar willSelectSegmentAtIndex:0];
-}
-// loadView
-- (void)loadView {
-    %orig;
-    NSLog(@"bhackel: XYMHomeViewController loadView");
-    // Switch to the Follow page (index 0) when the page is loaded
-    XYMHomeNaviBar *homeNaviBar = self.naviBarView;
-    [self homeNaviBar:homeNaviBar willSelectSegmentAtIndex:0];
-}
-// lazyViewDidLoad
-- (void)lazyViewDidLoad {
-    %orig;
-    NSLog(@"bhackel: XYMHomeViewController lazyViewDidLoad");
-    // Switch to the Follow page (index 0) when the page is loaded
-    XYMHomeNaviBar *homeNaviBar = self.naviBarView;
-    [self homeNaviBar:homeNaviBar willSelectSegmentAtIndex:0];
-}
+// // do the same thing for viewWillAppear
+// - (void)viewWillAppear:(BOOL)animated {
+//     %orig;
+//     NSLog(@"bhackel: XYMHomeViewController viewWillAppear");
+//     // Switch to the Follow page (index 0) when the page is loaded
+//     XYMHomeNaviBar *homeNaviBar = self.naviBarView;
+//     [self homeNaviBar:homeNaviBar willSelectSegmentAtIndex:0];
+// }
+// // lazyViewDidLoad
+// - (void)lazyViewDidLoad {
+//     %orig;
+//     NSLog(@"bhackel: XYMHomeViewController lazyViewDidLoad");
+//     // Switch to the Follow page (index 0) when the page is loaded
+//     XYMHomeNaviBar *homeNaviBar = self.naviBarView;
+//     [self homeNaviBar:homeNaviBar willSelectSegmentAtIndex:0];
+// }
 
 %end
 
@@ -77,6 +54,7 @@
 %hook XYPageScrollView
 - (void)layoutSubviews {
     %orig;
+    NSLog(@"bhackel: XYPageScrollView layoutSubviews");
     // Delete the pan gesture to swipe between pages
     if ([self valueForKey:@"_pan"]) {
         [self removeGestureRecognizer:[self valueForKey:@"_pan"]];

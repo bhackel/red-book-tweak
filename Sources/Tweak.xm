@@ -20,18 +20,17 @@
 - (void)layoutSubviews {
     %orig;
     NSLog(@"bhackel: XYSegmentControl layoutSubviews");
-    NSArray<UIButton *> *buttons = self.buttons;
-    // Check if we already removed it
-    if (buttons.count < 3) {
-        return;
-    }
-    // Remove the explore button
-    UIButton *exploreButton = buttons[1];
-    exploreButton.hidden = YES;
-    exploreButton.userInteractionEnabled = NO;
-    [exploreButton removeFromSuperview];
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        NSArray<UIButton *> *buttons = self.buttons;
+        // Remove the explore button
+        UIButton *exploreButton = buttons[1];
+        exploreButton.hidden = YES;
+        exploreButton.userInteractionEnabled = NO;
+    });
 }
 %end
+
 
 # pragma mark - Remove swipe between pages
 %hook XYPageScrollView

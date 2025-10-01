@@ -38,12 +38,10 @@ jobs:
       contents: write
 
     steps:
-      - name: Checkout main into xhs-tweak
+      - name: Checkout to xhs-tweak subfolder
         uses: actions/checkout@v4
         with:
-          ref: refs/heads/main
           path: xhs-tweak
-          submodules: recursive
 
       - name: Install Dependencies
         run: brew install make ldid

@@ -1,14 +1,13 @@
-# Original idea by @ISnackable. Thanks to him for handling the hardest parts!
-# https://github.com/ISnackable/YTCubePlus/blob/main/.github/workflows/Build.yml
+# Based on https://github.com/dayanch96/YTLite/blob/main/.github/workflows/main.yml
 
-name: Build and Release app
+name: Build app
 
 on:
   workflow_dispatch:
     inputs:
       sdk_version:
         description: "iOS SDK Version"
-        default: "16.5"
+        default: "15.6"
         required: true
         type: string
       decrypted_app_url:
@@ -34,30 +33,26 @@ concurrency:
 jobs:
   build:
     name: Build app
-    runs-on: macos-13
+    runs-on: macos-latest
     permissions:
       contents: write
 
     steps:
-      - name: Checkout Main
+      - name: Checkout main into xhs-tweak
         uses: actions/checkout@v4
         with:
-          path: main
-          ref: ${{ github.event.inputs.commit_id || github.ref }}
+          ref: refs/heads/main
+          path: xhs-tweak
           submodules: recursive
 
       - name: Install Dependencies
-        run: brew install ldid dpkg make
-
-      - name: Set PATH environment variable to fix building
-        run: echo "$(brew --prefix make)/libexec/gnubin" >> $GITHUB_PATH 
+        run: brew install make ldid
 
       - name: Setup Theos
         uses: actions/checkout@v4
         with:
           repository: theos/theos
-          ref: 5bfdc3cb7133ec1cab43182115d902e2b57c9eac
-          path: theos
+          path: ${{ github.workspace }}/theos
           submodules: recursive
       
       - name: SDK Caching
@@ -81,46 +76,36 @@ jobs:
           git checkout
           mv *.sdk $THEOS/sdks
 
-      - name: Setup Theos Jailed
-        uses: actions/checkout@v4
-        with:
-          repository: qnblackcat/theos-jailed
-          ref: master
-          path: theos-jailed
-          submodules: recursive
+      - name: Install cyan
+        run: pipx install --force https://github.com/asdfzxcvbn/pyzule-rw/archive/main.zip
 
-      - name: Install Theos Jailed
+      - name: Download and validate IPA
+        run: |
+          wget "${{ inputs.ipa_url }}" --no-verbose -O ${{ github.workspace }}/xhs.ipa
+
+          file_type=$(file --mime-type -b ${{ github.workspace }}/xhs.ipa)
+
+          if [[ "$file_type" != "application/x-ios-app" && "$file_type" != "application/zip" ]]; then
+            echo "::error::Validation failed: The downloaded file is not a valid IPA. Detected type: $file_type."
+            exit 1
+          fi
+
+      - name: Build Tweak
+        run: |
+          cd ${{ github.workspace }}/xhs-tweak
+          make clean package DEBUG=0 FINALPACKAGE=1
+          mv packages/*.deb ${{ github.workspace }}/xhs-tweak.deb
         env:
           THEOS: ${{ github.workspace }}/theos
-        run: |
-          ./theos-jailed/install
 
-
-      - name: Prepare iPA
-        id: prepare_ipa
-        env:
-          THEOS: ${{ github.workspace }}/theos
-          APP_URL: ${{ inputs.decrypted_app_url }}
+      - name: Inject tweak into IPA
         run: |
-          wget "$APP_URL" --no-verbose -O main/YouTube.ipa
-          cd ${{ github.workspace }}/main
-          mv YouTube.ipa YouTube.zip
-          unzip YouTube.zip
-
-      - name: Build Package
-        id: build_package
-        env:
-          THEOS: ${{ github.workspace }}/theos
-        run: |
-          cd ${{ github.workspace }}/main
-          make package THEOS_PACKAGE_SCHEME=rootless IPA=Payload/discover.app FINALPACKAGE=1
-          echo "package=$(ls -t packages | head -n1)" >>$GITHUB_OUTPUT
-          echo -e "==> \033[1mSHASUM256: $(shasum -a 256 packages/*.ipa | cut -f1 -d' ')\033[0m"
+          cyan -i xhs.ipa -o "小小红书.ipa" -uwef xhs-tweak.deb -n "小小红书" -b com.xingin.discover
 
       - name: Upload Artifact
         if: ${{ inputs.upload_artifact }}
         uses: actions/upload-artifact@v4
         with:
           name: app
-          path: ${{ github.workspace }}/main/packages/${{ steps.build_package.outputs.package }}
+          path: ${{ github.workspace }}/"小小红书.ipa"
           if-no-files-found: error

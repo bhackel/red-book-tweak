@@ -10,7 +10,7 @@ on:
         default: "15.6"
         required: true
         type: string
-      decrypted_app_url:
+      ipa_url:
         description: "Direct URL of the decrypted iPA"
         default: ""
         required: true

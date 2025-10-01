@@ -100,10 +100,12 @@ jobs:
         run: |
           cyan -i xhs.ipa -o "小小红书.ipa" -uwef xhs-tweak.deb -n "小小红书" -b com.xingin.discover
 
+      
+
       - name: Upload Artifact
         if: ${{ inputs.upload_artifact }}
         uses: actions/upload-artifact@v4
         with:
           name: app
-          path: ${{ github.workspace }}/"小小红书.ipa"
+          path: "${{ github.workspace }}/小小红书.ipa"
           if-no-files-found: error
